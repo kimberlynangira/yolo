@@ -1,9 +1,22 @@
-app-mongo-data
-app-mongo-data/
-vars.yml
-vault.yml
-.vagrant/
+cat > .gitignore << 'EOF'
+# Node modules
+node_modules/
+
+# Ruby/Rails specific
+*.rbc
+/.bundle
+/log/*
+/tmp/*
+
+# Environment variables and other secrets
+.env
+.env.*
+
+# OS specific files
+.DS_Store
+Thumbs.db
+
+# Editor folders
+.idea/
 .vscode/
-.vscode
-.vscode/*
-.vscode/*.json
+EOF

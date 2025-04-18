@@ -1,17 +1,84 @@
+#Version control
+.git
+.gitignore
+.github
+
+#Ruby specific
+.bundle
+vendor/bundle
+log/*
+tmp/*
+*.log
+.byebug_history
+.rspec
+coverage/
+
+
+#Node specific (for client)
 node_modules
 npm-debug.log
-build
-.dockerignore
-**/.git
-**/.DS_Store
-**/node_modules
-**Dockerfile
-Dockerfile*
-.git
-.github
-.gitignore
-dist/**
-README.md
-.vscode
-app-mongo-data
-app-mongo-data/
+yarn-error.log
+yarn-debud.log
+
+
+#Environment variables and secrets
+.env 
+.env.*
+config/master.key
+config/credentisld.yml.enc
+
+#Vagrant files (no longer needed )
+.vagrant 
+Vagrantfile
+
+#Docker files (to avoid recursive copying)
+Dockerfile
+docker-compose.yml
+docker-compose.*.yml
+.dockerignore 
+
+#Documentation
+README..md  
+CHANGELOG.md
+LICENSE
+docs/
+
+#Testing and development
+test/
+spec/
+features/
+factories/
+fixtures/
+
+#OS and editor files
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+#Build artifacts
+public/assets
+public/packs
+public/packs-test
+public/system
+node_modules/
+.sass-cache/
+.yarn
+
+#Database files 
+*.sqlite3
+*.sql 
+*.dump
+
+
+#Temporary files
+tmp/
+.tmp/
+temp/
+.temp/
+
+
+
+
