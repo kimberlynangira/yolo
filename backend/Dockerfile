@@ -1,4 +1,4 @@
-FROM ruby:3.0.0-alpine
+FROM ruby:3.0-alpine
 WORKDIR /app
 
 # Install dependencies for MongoDB instead of PostgreSQL
@@ -20,3 +20,7 @@ EXPOSE 80
 # Use the entrypoint script
 ENTRYPOINT ["/app/entrypoint.sh"]
 CMD ["rails", "server", "-b", "0.0.0.0", "-p", "80"]
+
+RUN mkdir -p /app/config/initializers
+COPY config/initializers/fix_logger.rb /app/config/initializers/
+
