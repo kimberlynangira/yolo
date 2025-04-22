@@ -1,26 +1,29 @@
-FROM ruby:3.0-alpine
-WORKDIR /app
+# Use an official Node runtime as a parent image
+FROM node:14 AS build
 
-# Install dependencies for MongoDB instead of PostgreSQL
-RUN apk add --no-cache build-base nodejs npm bash tzdata git
+# Set the working directory in the container
+WORKDIR /usr/src/app
 
+# Copy the package.json and package-lock.json
+COPY package*.json ./
 
-# Copy Gemfile and install dependencies
-COPY Gemfile Gemfile.lock ./
-RUN bundle install --jobs 4 --retry 3
+# Install application dependencies
+RUN npm install
 
-# Copy the rest of the application
+# Copy the rest of the application code to the container
 COPY . .
 
-# Make sure the entrypoint script is executable
-RUN chmod +x /app/entrypoint.sh
+#Add multi-stage build
+FROM alpine:3.16.7
 
-EXPOSE 80
+WORKDIR /app
 
-# Use the entrypoint script
-ENTRYPOINT ["/app/entrypoint.sh"]
-CMD ["rails", "server", "-b", "0.0.0.0", "-p", "80"]
+RUN apk update && apk add --no-cache nodejs npm
 
-RUN mkdir -p /app/config/initializers
-COPY config/initializers/fix_logger.rb /app/config/initializers/
+COPY --from=build /usr/src/app /app
 
+# Expose the port the app runs on
+EXPOSE 5000
+
+# Define the command to run your app
+CMD ["node", "server.js"]
