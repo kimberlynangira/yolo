@@ -1,0 +1,71 @@
+---
+# Frontend application setup
+- name: Install frontend dependencies
+  block:
+    - name: Pull Node.js Docker image
+      docker_image:
+        name: "{{ frontend_image }}"
+        source: pull
+
+    - name: Install frontend npm dependencies
+      docker_container:
+        name: temp-npm-install-frontend
+        image: "{{ frontend_image }}"
+        command: bash -c "cd /app && npm install"
+        volumes:
+          - "{{ frontend_directory }}:/app"
+        state: started
+        detach: no
+        cleanup: yes
+  tags:
+    - frontend
+    - dependencies
+
+- name: Create frontend Dockerfile
+  copy:
+    dest: "{{ frontend_directory }}/Dockerfile"
+    content: |
+      FROM {{ frontend_image }}
+      WORKDIR /app
+      COPY . .
+      RUN npm install
+      EXPOSE {{ frontend_port }}
+      CMD ["npm", "start"]
+  tags:
+    - frontend
+    - dockerfile
+
+- name: Build frontend Docker image
+  docker_image:
+    name: yolo-frontend-image
+    build:
+      path: "{{ frontend_directory }}"
+      pull: no
+    source: build
+  tags:
+    - frontend
+    - build
+
+- name: Run frontend container
+  docker_container:
+    name: "{{ frontend_container_name }}"
+    image: yolo-frontend-image
+    state: started
+    restart_policy: always
+    network_mode: "{{ mongo_network }}"
+    ports:
+      - "{{ frontend_port }}:{{ frontend_port }}"
+    env: "{{ frontend_environment }}"
+  tags:
+    - frontend
+    - container
+
+- name: Wait for frontend to be available
+  wait_for:
+    host: localhost
+    port: "{{ frontend_port }}"
+    delay: 10
+    timeout: 60
+  tags:
+    - frontend
+    - verify

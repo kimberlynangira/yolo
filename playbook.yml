@@ -1,9 +1,73 @@
 ---
-- name: Ansible playbook to dockerize and run yolo e-commerce app using ansible
+- name: Deploy YOLO E-commerce Application
   hosts: all
-  become: true
-  roles: 
-    - frontend-deployment
-    - setup-mongodb   
-    - backend-deployment
+  become: yes
+  vars_files:
+    - vars/main.yml
+
+  pre_tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+      tags: 
+        - always
+        - system
+
+    - name: Install prerequisite packages
+      apt:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - apt-transport-https
+        - ca-certificates
+        - curl
+        - gnupg
+        - lsb-release
+        - python3-pip
+        - python3-setuptools
+        - git
+      tags:
+        - system
+        - packages
+
+  roles:
+    - role: docker
+      tags: [docker, setup]
     
+    - role: mongodb
+      tags: [mongodb, database]
+    
+    - role: backend
+      tags: [backend, api]
+    
+    - role: frontend
+      tags: [frontend, client]
+
+  post_tasks:
+    - name: Check if application is running
+      uri:
+        url: "http://localhost:3000"
+        method: GET
+        status_code: 200
+        timeout: 5
+      register: app_status
+      ignore_errors: yes
+      tags: 
+        - verify
+      
+    - name: Display application status
+      debug:
+        msg: "Application is running successfully!"
+      when: app_status.status == 200
+      tags: 
+        - verify
+        
+    - name: Display connection information
+      debug:
+        msg: 
+          - "Frontend available at: http://192.168.33.10:3000"
+          - "Backend API available at: http://192.168.33.10:5000"
+          - "MongoDB running on: 192.168.33.10:27017"
+      tags:
+        - verify

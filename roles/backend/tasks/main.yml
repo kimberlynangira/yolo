@@ -1,0 +1,81 @@
+---
+# Backend application setup
+- name: Clone repository if not exists
+  git:
+    repo: "{{ repo_url }}"
+    dest: "{{ app_directory }}"
+    clone: yes
+    update: yes
+  tags:
+    - backend
+    - repository
+
+- name: Install backend dependencies
+  block:
+    - name: Pull Node.js Docker image
+      docker_image:
+        name: "{{ backend_image }}"
+        source: pull
+
+    - name: Install backend npm dependencies
+      docker_container:
+        name: temp-npm-install-backend
+        image: "{{ backend_image }}"
+        command: bash -c "cd /app && npm install"
+        volumes:
+          - "{{ backend_directory }}:/app"
+        state: started
+        detach: no
+        cleanup: yes
+  tags:
+    - backend
+    - dependencies
+
+- name: Create backend Dockerfile
+  copy:
+    dest: "{{ backend_directory }}/Dockerfile"
+    content: |
+      FROM {{ backend_image }}
+      WORKDIR /app
+      COPY . .
+      RUN npm install
+      EXPOSE {{ backend_port }}
+      CMD ["npm", "start"]
+  tags:
+    - backend
+    - dockerfile
+
+- name: Build backend Docker image
+  docker_image:
+    name: yolo-backend-image
+    build:
+      path: "{{ backend_directory }}"
+      pull: no
+    source: build
+  tags:
+    - backend
+    - build
+
+- name: Run backend container
+  docker_container:
+    name: "{{ backend_container_name }}"
+    image: yolo-backend-image
+    state: started
+    restart_policy: always
+    network_mode: "{{ mongo_network }}"
+    ports:
+      - "{{ backend_port }}:{{ backend_port }}"
+    env: "{{ backend_environment }}"
+  tags:
+    - backend
+    - container
+
+- name: Wait for backend to be available
+  wait_for:
+    host: localhost
+    port: "{{ backend_port }}"
+    delay: 10
+    timeout: 60
+  tags:
+    - backend
+    - verify

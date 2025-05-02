@@ -1,0 +1,78 @@
+---
+# Docker installation tasks
+- name: Set up Docker repository
+  block:
+    - name: Add Docker GPG key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+      
+    - name: Add Docker apt repository
+      apt_repository:
+        repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable
+        state: present
+  tags:
+    - docker
+    - repository
+
+- name: Install Docker
+  block:
+    - name: Install Docker packages
+      apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+        state: present
+        update_cache: yes
+      
+    - name: Install Docker pip module
+      pip:
+        name: docker
+        state: present
+  tags:
+    - docker
+    - packages
+
+- name: Configure Docker
+  block:
+    - name: Create Docker group
+      group:
+        name: docker
+        state: present
+      
+    - name: Add users to Docker group
+      user:
+        name: "{{ item }}"
+        groups: docker
+        append: yes
+      loop: "{{ docker_users }}"
+      
+    - name: Start and enable Docker service
+      service:
+        name: docker
+        state: started
+        enabled: yes
+  tags:
+    - docker
+    - configuration
+
+- name: Install Docker Compose
+  block:
+    - name: Download Docker Compose
+      get_url:
+        url: https://github.com/docker/compose/releases/download/v{{ docker_compose_version }}/docker-compose-Linux-x86_64
+        dest: /usr/local/bin/docker-compose
+        mode: '0755'
+      when: docker_install_compose
+  tags:
+    - docker
+    - compose
+
+- name: Create Docker network
+  docker_network:
+    name: "{{ mongo_network }}"
+    state: present
+  tags:
+    - docker
+    - network
