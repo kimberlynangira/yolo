@@ -1,0 +1,25 @@
+# In ecommerce-ansible/main.yml
+---
+- name: Setup e-commerce application
+  hosts: localhost
+  gather_facts: yes
+  vars_files:
+    - group_vars/all.yml
+
+  pre_tasks:
+    - name: Check if application directory exists
+      stat:
+        path: "{{ app_dir }}"
+      register: app_dir_exists
+
+  roles:
+    - common
+    - docker
+    - database
+    - backend
+    - frontend
+
+  post_tasks:
+    - name: Print application URL
+      debug:
+        msg: "E-commerce application is running at http://localhost:{{ frontend_port }}"
