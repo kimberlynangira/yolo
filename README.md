@@ -1,4 +1,4 @@
-# YOLO E-commerce Application Ansible Deployment
+# YOLO E-commerce Application Ansible Deployment.
 
 This repository contains Ansible playbooks and roles to automate the deployment of a containerized e-commerce application. The application consists of three main components: MongoDB database, Node.js backend API, and React frontend.
 
