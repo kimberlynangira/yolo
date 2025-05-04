@@ -1,81 +1,64 @@
+# In ecommerce-ansible/roles/backend/tasks/main.yml
 ---
-# Backend application setup
-- name: Clone repository if not exists
-  git:
-    repo: "{{ repo_url }}"
-    dest: "{{ app_directory }}"
-    clone: yes
-    update: yes
-  tags:
-    - backend
-    - repository
-
 - name: Install backend dependencies
-  block:
-    - name: Pull Node.js Docker image
-      docker_image:
-        name: "{{ backend_image }}"
-        source: pull
-
-    - name: Install backend npm dependencies
-      docker_container:
-        name: temp-npm-install-backend
-        image: "{{ backend_image }}"
-        command: bash -c "cd /app && npm install"
-        volumes:
-          - "{{ backend_directory }}:/app"
-        state: started
-        detach: no
-        cleanup: yes
-  tags:
-    - backend
-    - dependencies
+  npm:
+    path: "{{ backend_dir }}"
+    state: present
+  become: yes
 
 - name: Create backend Dockerfile
   copy:
-    dest: "{{ backend_directory }}/Dockerfile"
+    dest: "{{ backend_dir }}/Dockerfile"
     content: |
-      FROM {{ backend_image }}
+      FROM node:16-alpine
       WORKDIR /app
-      COPY . .
+      COPY package*.json ./
       RUN npm install
+      COPY . .
       EXPOSE {{ backend_port }}
       CMD ["npm", "start"]
-  tags:
-    - backend
-    - dockerfile
+    mode: '0644'
+  become: yes
+
+- name: Check if backend image exists
+  command: docker images -q backend:latest
+  register: backend_image_exists
+  changed_when: false
+  become: yes
 
 - name: Build backend Docker image
-  docker_image:
-    name: yolo-backend-image
-    build:
-      path: "{{ backend_directory }}"
-      pull: no
-    source: build
-  tags:
-    - backend
-    - build
+  command: docker build -t backend:latest {{ backend_dir }}
+  become: yes
+  when: backend_image_exists.stdout == ""
+
+- name: Check if backend container exists
+  command: docker ps -a -q -f name={{ backend_container_name }}
+  register: backend_container_exists
+  changed_when: false
+  become: yes
+
+- name: Remove existing backend container
+  command: docker rm -f {{ backend_container_name }}
+  become: yes
+  when: backend_container_exists.stdout != ""
 
 - name: Run backend container
-  docker_container:
-    name: "{{ backend_container_name }}"
-    image: yolo-backend-image
-    state: started
-    restart_policy: always
-    network_mode: "{{ mongo_network }}"
-    ports:
-      - "{{ backend_port }}:{{ backend_port }}"
-    env: "{{ backend_environment }}"
-  tags:
-    - backend
-    - container
+  command: >
+    docker run -d 
+    --name {{ backend_container_name }} 
+    --restart always 
+    --network {{ docker_network_name }} 
+    -p {{ backend_port }}:{{ backend_port }} 
+    -e MONGO_URI=mongodb://{{ mongo_username }}:{{ mongo_password }}@{{ mongo_container_name }}:{{ mongo_container_port }}/{{ mongo_db_name }}
+    backend:latest
+  become: yes
 
-- name: Wait for backend to be available
-  wait_for:
-    host: localhost
-    port: "{{ backend_port }}"
-    delay: 10
-    timeout: 60
-  tags:
-    - backend
-    - verify
+- name: Check backend container status
+  command: docker inspect -f {% raw %}'{{.State.Status}}'{% endraw %} {{ backend_container_name }}
+  register: backend_status
+  changed_when: false
+  become: yes
+
+- name: Show backend container status
+  debug:
+    msg: "Backend container status: {{ backend_status.stdout }}"
