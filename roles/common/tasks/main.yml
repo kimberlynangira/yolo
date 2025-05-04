@@ -1,0 +1,28 @@
+# In ecommerce-ansible/roles/common/tasks/main.yml
+---
+- name: Install dependencies
+  apt:
+    name:
+      - git
+      - nodejs
+      - npm
+    state: present
+    update_cache: yes
+  become: yes
+
+- name: Create application directory if it doesn't exist
+  file:
+    path: "{{ app_dir }}"
+    state: directory
+    mode: '0755'
+  become: yes
+  when: not app_dir_exists.stat.exists
+
+- name: Clone application repository if specified
+  git:
+    repo: "https://github.com/kimberlynangira/yolo.git"
+    dest: "{{ app_dir }}"
+    clone: yes
+    update: yes
+  become: yes
+  when: not app_dir_exists.stat.exists
