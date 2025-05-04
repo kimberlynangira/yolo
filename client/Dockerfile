@@ -1,26 +1,21 @@
-# Use an official Node runtime as a parent image
-FROM node:14-slim AS build
+FROM node:14
 
-# Set the working directory in the container
-WORKDIR /usr/src/app
+# Create app directory
+WORKDIR /app
 
-# Copy the package.json and package-lock.json files to the container
+# Copy package.json and package-lock.json
 COPY package*.json ./
 
-# Install application dependencies
+# Install dependencies
 RUN npm install
 
-# Copy the rest of the application code to the container
+# Copy the app source code
 COPY . .
 
-RUN npm run build
+# Set environment variables for proper binding
+ENV HOST=0.0.0.0
+ENV PORT=3000
+ENV DANGEROUSLY_DISABLE_HOST_CHECK=true
 
-# Stage 2: Serve the production build using Nginx
-FROM nginx:alpine
-
-COPY --from=build /usr/src/app/build /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-
-EXPOSE 80
-
-CMD ["nginx", "-g", "daemon off;"]
+# Set the command to run the app with interactive mode
+CMD ["npm", "start"]

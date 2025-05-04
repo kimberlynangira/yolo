@@ -1,71 +1,64 @@
+# In ecommerce-ansible/roles/frontend/tasks/main.yml
 ---
-# Frontend application setup
 - name: Install frontend dependencies
-  block:
-    - name: Pull Node.js Docker image
-      docker_image:
-        name: "{{ frontend_image }}"
-        source: pull
-
-    - name: Install frontend npm dependencies
-      docker_container:
-        name: temp-npm-install-frontend
-        image: "{{ frontend_image }}"
-        command: bash -c "cd /app && npm install"
-        volumes:
-          - "{{ frontend_directory }}:/app"
-        state: started
-        detach: no
-        cleanup: yes
-  tags:
-    - frontend
-    - dependencies
+  npm:
+    path: "{{ frontend_dir }}"
+    state: present
+  become: yes
 
 - name: Create frontend Dockerfile
   copy:
-    dest: "{{ frontend_directory }}/Dockerfile"
+    dest: "{{ frontend_dir }}/Dockerfile"
     content: |
-      FROM {{ frontend_image }}
+      FROM node:16-alpine
       WORKDIR /app
-      COPY . .
+      COPY package*.json ./
       RUN npm install
+      COPY . .
       EXPOSE {{ frontend_port }}
       CMD ["npm", "start"]
-  tags:
-    - frontend
-    - dockerfile
+    mode: '0644'
+  become: yes
+
+- name: Check if frontend image exists
+  command: docker images -q frontend:latest
+  register: frontend_image_exists
+  changed_when: false
+  become: yes
 
 - name: Build frontend Docker image
-  docker_image:
-    name: yolo-frontend-image
-    build:
-      path: "{{ frontend_directory }}"
-      pull: no
-    source: build
-  tags:
-    - frontend
-    - build
+  command: docker build -t frontend:latest {{ frontend_dir }}
+  become: yes
+  when: frontend_image_exists.stdout == ""
+
+- name: Check if frontend container exists
+  command: docker ps -a -q -f name={{ frontend_container_name }}
+  register: frontend_container_exists
+  changed_when: false
+  become: yes
+
+- name: Remove existing frontend container
+  command: docker rm -f {{ frontend_container_name }}
+  become: yes
+  when: frontend_container_exists.stdout != ""
 
 - name: Run frontend container
-  docker_container:
-    name: "{{ frontend_container_name }}"
-    image: yolo-frontend-image
-    state: started
-    restart_policy: always
-    network_mode: "{{ mongo_network }}"
-    ports:
-      - "{{ frontend_port }}:{{ frontend_port }}"
-    env: "{{ frontend_environment }}"
-  tags:
-    - frontend
-    - container
+  command: >
+    docker run -d 
+    --name {{ frontend_container_name }} 
+    --restart always 
+    --network {{ docker_network_name }} 
+    -p {{ frontend_port }}:{{ frontend_port }} 
+    -e REACT_APP_API_URL=http://{{ backend_container_name }}:{{ backend_port }}
+    frontend:latest
+  become: yes
 
-- name: Wait for frontend to be available
-  wait_for:
-    host: localhost
-    port: "{{ frontend_port }}"
-    delay: 10
-    timeout: 60
-  tags:
-    - frontend
-    - verify
+- name: Check frontend container status
+  command: docker inspect -f {% raw %}'{{.State.Status}}'{% endraw %} {{ frontend_container_name }}
+  register: frontend_status
+  changed_when: false
+  become: yes
+
+- name: Show frontend container status
+  debug:
+    msg: "Frontend container status: {{ frontend_status.stdout }}"
