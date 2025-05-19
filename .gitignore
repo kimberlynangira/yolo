@@ -1,43 +1,10 @@
-# Ignore Vagrant
 .vagrant/
-
-# Ignore Docker Compose
-docker-compose.yaml
-docker-compose.yml
-
-# Ignore Ansible
-ansible.cfg
-inventory.yml
-main.yml
-playbook.yml
-
-# Ignore other Kubernetes files at the root
-app-config.yaml
-app-deployment.yaml
-app-service.yaml
-deployment.yaml
-fix-deployment.sh
-service.yaml
-
-#Ignore minikube
+node_modules/
+*.log
+.env
+.DS_Store
 minikube-linux-amd64
-
-# Ignore files at the root
-database-init-job.yaml
-database-persistent-volume-claim.yaml
-database-service.yaml
-database-statefulset.yaml
-
-# Ignore backend and frontend folders at root
-backend/
-frontend/
-
-# Ignore files in the root kubernetes directory
-kubernetes/backend-deployment.yaml
-kubernetes/cleanup-deploy-yolo.sh
-kubernetes/database/
-kubernetes/frontend-deployment.yaml
-kubernetes/frontend-fix.yaml
-kubernetes/mongodb-deployment-service.yaml
-kubernetes/mongodb-statefulset.yaml
-kubernetes/namespace.yaml
+.vscode/
+.idea/
+*.tmp
+*.swp
