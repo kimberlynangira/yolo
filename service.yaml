@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: yolo-app-service
+  namespace: yolo-app
+  labels:
+    app: yolo-app
+spec:
+  selector:
+    app: yolo-app
+  ports:
+    - protocol: TCP
+      port: 80      # The port you want to expose externally
+      targetPort: 5000  # Change this to 5000
+  type: LoadBalancer

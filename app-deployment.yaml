@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app
+  labels:
+    app: week5-project
+    tier: frontend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: week5-project
+      tier: frontend
+  template:
+    metadata:
+      labels:
+        app: week5-project
+        tier: frontend
+    spec:
+      containers:
+      - name: app
+        image: kimberlynangira/week5-app:latest
+        ports:
+        - containerPort: 80
+          name: http
+        env:
+        - name: DB_HOST
+          value: "database"
+        - name: DB_USER
+          value: "dbuser"
+        - name: DB_PASSWORD
+          value: "dbpassword"
+        - name: DB_NAME
+          value: "appdb"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /
+            port: http
+          initialDelaySeconds: 5
+          periodSeconds: 5

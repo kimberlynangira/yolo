@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  labels:
+    app: week5-project
+data:
+  APP_ENV: "production"
+  APP_DEBUG: "false"
+  DB_HOST: "database"
+  DB_PORT: "3306"
