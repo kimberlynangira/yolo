@@ -41,7 +41,7 @@ kubectl apply -f kubernetes/frontend/
 ```bash
 kubectl get pods -n yolo-app
 ```
-5.Access the application
+5.Access the application.
 
  ```bash
 kubectl get services frontend-service -n yolo-app
