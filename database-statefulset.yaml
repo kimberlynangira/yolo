@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: database
+  namespace: yolo-app
+spec:
+  serviceName: database-service
+  replicas: 1
+  selector:
+    matchLabels:
+      app: database
+  template:
+    metadata:
+      labels:
+        app: database
+    spec:
+      securityContext:
+        fsGroup: 999
+      initContainers:
+      - name: init-mysql
+        image: mysql:5.7
+        command: ['bash', '-c', 'chown -R mysql:mysql /var/lib/mysql']
+        volumeMounts:
+        - name: mysql-data
+          mountPath: /var/lib/mysql
+      containers:
+      - name: mysql
+        image: mysql:5.7
+        command:
+          - bash
+          - "-c"
+        args:
+          - exec docker-entrypoint.sh mysqld
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          value: "rootpassword"
+        - name: MYSQL_DATABASE
+          value: "appdb"
+        - name: MYSQL_USER
+          value: "appuser"
+        - name: MYSQL_PASSWORD
+          value: "apppassword"
+        ports:
+        - containerPort: 3306
+        volumeMounts:
+        - name: mysql-data
+          mountPath: /var/lib/mysql
+  volumeClaimTemplates:
+  - metadata:
+      name: mysql-data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 1Gi
+      storageClassName: standard

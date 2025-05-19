@@ -1,0 +1,39 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: database-init
+  namespace: yolo-app
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: mysql-init
+          image: mysql:5.7
+          command:
+            - bash
+            - "-c"
+          args:
+            - >
+              set -ex;
+              rm -rf /var/lib/mysql/*;
+              echo "Initializing MySQL..."
+              docker-entrypoint.sh mysqld --initialize-insecure --user=mysql --basedir=/usr --datadir=/var/lib/mysql --plugin-dir=/usr/lib/mysql/plugin --log-error=/var/log/mysql/error.log --pid-file=/var/run/mysqld/mysqld.pid --socket=/var/run/mysqld/mysqld.sock --port=3306
+              echo "MySQL initialized."
+              touch /var/lib/mysql/.initialized
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              value: "rootpassword"
+            - name: MYSQL_DATABASE
+              value: "appdb"
+            - name: MYSQL_USER
+              value: "appuser"
+            - name: MYSQL_PASSWORD
+              value: "apppassword"
+          volumeMounts:
+            - name: mysql-data
+              mountPath: /var/lib/mysql
+      volumes:
+        - name: mysql-data
+          persistentVolumeClaim:
+            claimName: mysql-data-database-0
