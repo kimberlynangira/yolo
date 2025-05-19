@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: yolo-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: yolo
+      tier: frontend
+  template:
+    metadata:
+      labels:
+        app: yolo
+        tier: frontend
+    spec:
+      containers:
+      - name: frontend
+        image: kimberlynangira/week5-client:latest
+        command: ["/bin/sh", "-c"]
+        args:
+          - |
+            cd /app
+            export CI=true
+            npm run build
+            npx serve -s build -l 3000
+        env:
+        - name: REACT_APP_BACKEND_URL
+          value: http://backend-service:5000
+        ports:
+        - containerPort: 3000
+        resources:
+          limits:
+            cpu: 100m
+            ephemeral-storage: 512Mi
+            memory: 128Mi
+          requests:
+            cpu: 50m
+            ephemeral-storage: 256Mi
+            memory: 64Mi

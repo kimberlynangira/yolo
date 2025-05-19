@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: yolo
+      tier: backend
+  template:
+    metadata:
+      labels:
+        app: yolo
+        tier: backend
+    spec:
+      containers:
+      - name: backend
+        image: kimberlynangira/week5-server:latest
+        ports:
+        - containerPort: 5000
+        env:
+        - name: MONGODB_URI
+          value: "mongodb://mongodb:27017/yolo"
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+            ephemeral-storage: "256Mi"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+            ephemeral-storage: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-service
+spec:
+  selector:
+    app: yolo
+    tier: backend
+  ports:
+  - port: 5000
+    targetPort: 5000
+  type: ClusterIP

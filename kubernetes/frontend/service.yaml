@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-service
+  namespace: yolo-app
+  labels:
+    app: yolo
+    tier: frontend
+spec:
+  type: LoadBalancer  # Change this line from NodePort to LoadBalancer
+  ports:
+  - port: 80
+    targetPort: 3000
+    protocol: TCP
+    name: http
+  selector:
+    app: yolo
+    tier: frontend

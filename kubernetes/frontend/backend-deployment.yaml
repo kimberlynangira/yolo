@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: yolo-app
+  labels:
+    app: yolo
+    tier: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: yolo
+      tier: backend
+  template:
+    metadata:
+      labels:
+        app: yolo
+        tier: backend
+    spec:
+      containers:
+      - name: backend
+        image: gcr.io/kubernetes-kimberly-demo/backend:latest
+        ports:
+        - containerPort: 5000
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 5000
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 5000
+          initialDelaySeconds: 5
+          periodSeconds: 15
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 100m
+            memory: 128Mi
+        env:
+        - name: MONGODB_URI
+          value: mongodb://mongodb-service:27017/yolo

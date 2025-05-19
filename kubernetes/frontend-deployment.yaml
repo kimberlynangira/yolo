@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: yolo
+      tier: frontend
+  template:
+    metadata:
+      labels:
+        app: yolo
+        tier: frontend
+    spec:
+      containers:
+      - name: frontend
+        image: kimberlynangira/week5-client:latest
+        ports:
+        - containerPort: 3000
+        env:
+        - name: REACT_APP_BACKEND_URL
+          value: "http://backend-service:5000"
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+            ephemeral-storage: "256Mi"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+            ephemeral-storage: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-service
+spec:
+  selector:
+    app: yolo
+    tier: frontend
+  ports:
+  - port: 80
+    targetPort: 3000
+  type: LoadBalancer
