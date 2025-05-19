@@ -1,22 +1,43 @@
-cat > .gitignore << 'EOF'
-# Node modules
-node_modules/
+# Ignore Vagrant
+.vagrant/
 
-# Ruby/Rails specific
-*.rbc
-/.bundle
-/log/*
-/tmp/*
+# Ignore Docker Compose
+docker-compose.yaml
+docker-compose.yml
 
-# Environment variables and other secrets
-.env
-.env.*
+# Ignore Ansible
+ansible.cfg
+inventory.yml
+main.yml
+playbook.yml
 
-# OS specific files
-.DS_Store
-Thumbs.db
+# Ignore other Kubernetes files at the root
+app-config.yaml
+app-deployment.yaml
+app-service.yaml
+deployment.yaml
+fix-deployment.sh
+service.yaml
 
-# Editor folders
-.idea/
-.vscode/
-EOF
+#Ignore minikube
+minikube-linux-amd64
+
+# Ignore files at the root
+database-init-job.yaml
+database-persistent-volume-claim.yaml
+database-service.yaml
+database-statefulset.yaml
+
+# Ignore backend and frontend folders at root
+backend/
+frontend/
+
+# Ignore files in the root kubernetes directory
+kubernetes/backend-deployment.yaml
+kubernetes/cleanup-deploy-yolo.sh
+kubernetes/database/
+kubernetes/frontend-deployment.yaml
+kubernetes/frontend-fix.yaml
+kubernetes/mongodb-deployment-service.yaml
+kubernetes/mongodb-statefulset.yaml
+kubernetes/namespace.yaml

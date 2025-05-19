@@ -1,0 +1,25 @@
+# Application directory (where your repo is cloned)
+app_dir: "/home/kimberly-nangira/yolo"
+# User variables
+ansible_user: "kimberly-nangira"
+# Docker network
+docker_network_name: "ecommerce-network"
+# MongoDB configuration
+mongo_container_name: "mongodb"
+mongo_image: "mongo:4.4"
+mongo_data_dir: "/home/kimberly-nangira/mongodb-data"
+mongo_username: "admin"
+mongo_password: "password"
+mongo_db_name: "ecommerce"
+mongo_host_port: 27018  # Changed from 27017
+mongo_container_port: 27017
+# Backend configuration
+backend_container_name: "backend"
+backend_dir: "{{ app_dir }}/backend"
+backend_port: 5001  # Changed from 5000
+# Frontend configuration
+frontend_container_name: "frontend"
+frontend_dir: "{{ app_dir }}/client"
+frontend_port: 3001  # Changed from 3000
+# SELinux settings
+selinux_enabled: false

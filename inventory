@@ -1,0 +1,2 @@
+# In ecommerce-ansible/inventory
+localhost ansible_connection=local

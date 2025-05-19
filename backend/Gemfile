@@ -1,24 +1,19 @@
-source 'https://rubygems.org'
-git_source(:github) { |repo| "https://github.com/#{repo}.git" }
-ruby '~> 3.0.0'
-# Bundle edge Rails instead: gem 'rails', github: 'rails/rails', branch: 'main'
-gem 'rails', '~> 6.1.7'
-gem 'mongoid'
-gem 'logger', '~> 1.5' 
-# Use Puma as the app server
-gem 'puma', '~> 5.0'
-# Build JSON APIs with ease
-gem 'jbuilder'
-# Reduces boot times through caching; required in config/boot.rb
-gem 'bootsnap', require: false
-# Use Rack CORS for handling Cross-Origin Resource Sharing (CORS)
-gem 'rack-cors'
-group :development, :test do
-  # Call 'byebug' anywhere in the code to stop execution and get a debugger console
-  gem 'byebug', platforms: [:mri, :mingw, :x64_mingw]
-end
-group :development do
-  gem 'listen', '~> 3.3'
-  # Spring speeds up development by keeping your application running in the background
-  gem 'spring'
-end
+# Use an official, Node runtine as a parent im
+FROM node:14 AS  
+# Set the working directory in the container
+WORKDIR /usr/src/app
+# Copy the package. json and package-lock. json
+COPY package*.json ./
+# Install application dependencies
+RUN npm install
+# Copy the rest of the application code to the
+COPY • .
+#Add multi-stage build
+FROM alpine: 3.16.7
+WORKDIR /app
+RUN apk update && apk add -no-cache nodejs na
+COPY -fron-build /usr/src/app /app
+# Expose the port the app runs on
+EXPOSE 5000
+# Define the command to run your app
+CMD ["node", "server.js"]

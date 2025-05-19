@@ -1,0 +1,64 @@
+# In ecommerce-ansible/roles/frontend/tasks/main.yml
+---
+- name: Install frontend dependencies
+  npm:
+    path: "{{ frontend_dir }}"
+    state: present
+  become: yes
+
+- name: Create frontend Dockerfile
+  copy:
+    dest: "{{ frontend_dir }}/Dockerfile"
+    content: |
+      FROM node:16-alpine
+      WORKDIR /app
+      COPY package*.json ./
+      RUN npm install
+      COPY . .
+      EXPOSE {{ frontend_port }}
+      CMD ["npm", "start"]
+    mode: '0644'
+  become: yes
+
+- name: Check if frontend image exists
+  command: docker images -q frontend:latest
+  register: frontend_image_exists
+  changed_when: false
+  become: yes
+
+- name: Build frontend Docker image
+  command: docker build -t frontend:latest {{ frontend_dir }}
+  become: yes
+  when: frontend_image_exists.stdout == ""
+
+- name: Check if frontend container exists
+  command: docker ps -a -q -f name={{ frontend_container_name }}
+  register: frontend_container_exists
+  changed_when: false
+  become: yes
+
+- name: Remove existing frontend container
+  command: docker rm -f {{ frontend_container_name }}
+  become: yes
+  when: frontend_container_exists.stdout != ""
+
+- name: Run frontend container
+  command: >
+    docker run -d 
+    --name {{ frontend_container_name }} 
+    --restart always 
+    --network {{ docker_network_name }} 
+    -p {{ frontend_port }}:{{ frontend_port }} 
+    -e REACT_APP_API_URL=http://{{ backend_container_name }}:{{ backend_port }}
+    frontend:latest
+  become: yes
+
+- name: Check frontend container status
+  command: docker inspect -f {% raw %}'{{.State.Status}}'{% endraw %} {{ frontend_container_name }}
+  register: frontend_status
+  changed_when: false
+  become: yes
+
+- name: Show frontend container status
+  debug:
+    msg: "Frontend container status: {{ frontend_status.stdout }}"
