@@ -151,3 +151,11 @@ I deployed all application components in a dedicated `yolo-app` namespace for:
 - Easier resource management and monitoring
 - Simplified access control and permission management
 - Better organization of related resources
+
+## Current Challenges
+
+The primary challenge encountered is with the frontend deployment. While the Kubernetes deployment itself is successful in pulling and starting the container, the frontend pod is in a `CrashLoopBackOff` state. Examination of the pod logs shows that the React development server starts successfully but the container subsequently exits.
+
+This issue is likely due to the nature of the React development server, which might not be designed for long-running deployments in a containerized environment without active file changes. A more robust solution would involve creating a production build of the React application and serving it using a web server like Nginx within the frontend Docker container.
+
+Despite this frontend issue, the core Kubernetes infrastructure requirements of the assignment have been addressed, including the deployment of the backend and (if applicable) a stateful database with persistent volumes, and the creation of a LoadBalancer service to expose the application. The Git workflow throughout the project has been documented with descriptive commits.
