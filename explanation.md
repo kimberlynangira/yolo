@@ -1,60 +1,153 @@
-
 # Implementation Explanation
 
-## 1. Kubernetes Objects Choice
+## 1. Choice of Kubernetes Objects
 
-I chose to use the following Kubernetes objects for my implementation:
+### Deployment for MongoDB
+I chose to implement a Deployment for the MongoDB database along with appropriate services:
+- **MongoDB Deployment**: Manages the lifecycle of MongoDB pods and ensures they're always running
+- **MongoDB Services**: I created two services (`mongodb` and `mongodb-service`) as headless services (ClusterIP: None) to provide stable DNS names for database access
 
-### StatefulSet for Database
-I implemented a StatefulSet for the database component because:
-- It provides stable, unique network identifiers for each pod
-- It offers stable, persistent storage with volume mounting
-- It ensures ordered, graceful deployment and scaling
-- It guarantees ordered, graceful deletion and termination
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mongodb-deployment
+  namespace: yolo-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongodb
+  template:
+    metadata:
+      labels:
+        app: mongodb
+    spec:
+      containers:
+      - name: mongodb
+        image: mongo:latest
+        ports:
+        - containerPort: 27017
+        volumeMounts:
+        - name: mongodb-data
+          mountPath: /data/db
+      volumes:
+      - name: mongodb-data
+        persistentVolumeClaim:
+          claimName: mongodb-pvc
+```
 
-Unlike regular Deployments, StatefulSets maintain a sticky identity for each pod. This is critical for the database tier as it needs stable network identities and persistent storage. The StatefulSet ensures that when pods are rescheduled, they maintain their identity and reconnect to the same persistent volumes.
-
-### Deployment for Frontend/Backend
-For the frontend and backend components, I used Deployments because:
-- They're stateless applications that don't require stable network identities
-- They can be scaled up/down without concern for pod identity
-- They benefit from the rolling update strategy provided by Deployments
-
-### ConfigMaps and Secrets
-I used ConfigMaps to store non-sensitive configuration data and Secrets for sensitive information like database credentials. This separation of configuration from code follows best practices and makes the application more portable.
+### Deployments for Frontend and Backend Applications
+For the frontend and backend applications, I used Deployments because:
+- They're stateless and don't require stable network identities
+- They benefit from the easy scaling and rolling updates that Deployments provide
+- The separation of frontend and backend improves application architecture and scaling capabilities
 
 ## 2. Method Used to Expose Pods to Internet Traffic
 
-I used a combination of Service types to expose the application:
-
-### ClusterIP Service for Database
-The database is exposed only internally using a ClusterIP service, which:
-- Prevents direct external access to the database
-- Allows other components within the cluster to communicate with the database
-- Enhances security by limiting the attack surface
+I used multiple service types to expose different parts of my application appropriately:
 
 ### LoadBalancer Service for Frontend
-I exposed the frontend using a LoadBalancer service, which:
-- Automatically provisions an external load balancer in GKE
-- Provides a public IP address for external access
-- Distributes traffic across frontend pods for high availability
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-service
+  namespace: yolo-app
+spec:
+  selector:
+    app: frontend
+  ports:
+  - port: 80
+    targetPort: 3000
+  type: LoadBalancer
+```
+This service is of type LoadBalancer (with external IP 34.55.124.145), which provisions an external IP address in GKE. This exposes the frontend application to the internet, allowing users to access the shopping cart functionality.
 
-This multi-tiered approach to exposure ensures that only the components that need to be publicly accessible are exposed, following the principle of least privilege.
+### ClusterIP Service for Backend
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-service
+  namespace: yolo-app
+spec:
+  selector:
+    app: backend
+  ports:
+  - port: 5000
+    targetPort: 5000
+  type: ClusterIP
+```
+The backend service uses ClusterIP to make it accessible only within the cluster. This adds a layer of security by preventing direct external access to the API.
 
-## 3. Persistent Storage Implementation
+### Headless Services for MongoDB
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongodb-service
+  namespace: yolo-app
+spec:
+  selector:
+    app: mongodb
+  ports:
+  - port: 27017
+    targetPort: 27017
+  clusterIP: None
+```
+This headless service allows direct connection to specific MongoDB pods by DNS name. This is internal to the cluster only, as the database should not be directly exposed to the internet.
 
-I implemented persistent storage using:
+The LoadBalancer type for the frontend is appropriate for production deployments on cloud providers like GKE because it:
+- Automatically provisions a cloud load balancer
+- Handles traffic distribution across pods
+- Provides a stable external IP address
+- Includes health checking and automatic pod removal for failing instances
 
-### Persistent Volume Claims (PVCs)
-Each database pod in the StatefulSet has its own PVC that:
-- Survives pod restarts and rescheduling
-- Maintains data integrity across deployments
-- Ensures no data loss when pods are deleted and recreated
+## 3. Use of Persistent Storage
 
-### Storage Class
-I used the standard GKE storage class which:
-- Automatically provisions persistent disks in Google Cloud
-- Provides durable storage for the database
-- Handles the underlying storage provisioning automatically
+I implemented persistent storage through PersistentVolumeClaims to ensure data durability. This approach means that even if the MongoDB pod is deleted or rescheduled, the data remains intact.
 
-This implementation ensures that when database pods are deleted, the data remains intact. When new pods are created, they reconnect to the same persistent volumes, maintaining data consistency.
+```yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mongodb-pvc
+  namespace: yolo-app
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+```
+
+The MongoDB deployment references this PVC:
+```yaml
+volumes:
+- name: mongodb-data
+  persistentVolumeClaim:
+    claimName: mongodb-pvc
+```
+
+This ensures:
+- Database storage persists independently of pod lifecycle
+- The storage is retained when pods are deleted
+- The same storage is reattached when the pod is recreated
+- Data is preserved across pod lifecycle events
+
+To test this persistence:
+1. Add items to the shopping cart
+2. Delete the MongoDB pod: `kubectl delete pod [mongodb-pod-name] -n yolo-app`
+3. Wait for the pod to automatically restart
+4. Verify that all items added to the cart remain in the database
+
+This implementation guarantees that customer shopping cart data is never lost due to pod failures or restarts, which is essential for a production e-commerce application.
+
+## Namespace Strategy
+
+I deployed all application components in a dedicated `yolo-app` namespace for:
+- Logical isolation from other applications in the cluster
+- Easier resource management and monitoring
+- Simplified access control and permission management
+- Better organization of related resources
