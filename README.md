@@ -66,12 +66,9 @@ Access the application using the External IP (http://34.55.124.145).
 
 The application is deployed and accessible at: `http://34.55.124.145`
 
-**Note:** The frontend is currently experiencing a `CrashLoopBackOff` in its Kubernetes pod. The logs indicate that the React development server starts but then the container exits, causing Kubernetes to restart it repeatedly. This prevents the frontend application from being accessible in the browser.
+**Note:** The frontend pod is now running successfully without any `CrashLoopBackOff` errors. However, the application is currently unreachable in the web browser, resulting in a "This site can't be reached" error.
 
-The backend and database services appear to be running. The core Kubernetes infrastructure, including the LoadBalancer service, deployments, and (if implemented) persistent volumes, are configured. The issue lies in the behavior of the frontend development server within the container environment. Further investigation would involve creating a production build of the React application and serving it with a production-ready web server in the Docker container.
-
-
-
+The backend and database services appear to be running. The core Kubernetes infrastructure, including the LoadBalancer service, deployments, and (if implemented) persistent volumes, are configured. The remaining issue seems to be related to external network connectivity or firewall rules preventing access to the LoadBalancer's IP address on port 80. Further investigation into the GKE firewall rules and network configuration is required to resolve this.
 
 ## Kubernetes Resources Used
 - **Deployments**: For frontend, backend, and MongoDB applications

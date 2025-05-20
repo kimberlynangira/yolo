@@ -154,8 +154,8 @@ I deployed all application components in a dedicated `yolo-app` namespace for:
 
 ## Current Challenges
 
-The primary challenge encountered is with the frontend deployment. While the Kubernetes deployment itself is successful in pulling and starting the container, the frontend pod is in a `CrashLoopBackOff` state. Examination of the pod logs shows that the React development server starts successfully but the container subsequently exits.
+The frontend deployment is now running without the previous `CrashLoopBackOff` issue. The container starts successfully and serves content on port 3000 internally within the pod.
 
-This issue is likely due to the nature of the React development server, which might not be designed for long-running deployments in a containerized environment without active file changes. A more robust solution would involve creating a production build of the React application and serving it using a web server like Nginx within the frontend Docker container.
+However, the application remains unreachable in the web browser, resulting in a "This site can't be reached" error. This indicates a problem with external network connectivity, likely related to firewall rules in the Google Kubernetes Engine (GKE) that might be blocking incoming traffic to the LoadBalancer's external IP address on port 80.
 
-Despite this frontend issue, the core Kubernetes infrastructure requirements of the assignment have been addressed, including the deployment of the backend and (if applicable) a stateful database with persistent volumes, and the creation of a LoadBalancer service to expose the application. The Git workflow throughout the project has been documented with descriptive commits.
+The core Kubernetes infrastructure requirements of the assignment have been addressed, including the deployment of the backend and (if applicable) a stateful database with persistent volumes, and the creation of a LoadBalancer service to expose the application. The remaining challenge lies in ensuring external network access to the frontend service.
